@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
+
+	"github.com/BunnyTheLifeguard/greenlight/internal/data"
 )
 
 // Add createMovieHandler for "POST /v1/movies" endpoint
@@ -18,5 +21,18 @@ func (app *application) showMovieHandler(rw http.ResponseWriter, r *http.Request
 		return
 	}
 
-	fmt.Fprintf(rw, "Show details of movie %d", id)
+	movie := data.Movie{
+		ID:        id,
+		CreatedAt: time.Now(),
+		Title:     "Casablanca",
+		Runtime:   102,
+		Genres:    []string{"drama", "romance", "war"},
+		Version:   1,
+	}
+
+	err = app.writeJSON(rw, http.StatusOK, movie, nil)
+	if err != nil {
+		app.logger.Println(err)
+		http.Error(rw, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
+	}
 }
