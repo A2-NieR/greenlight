@@ -10,7 +10,20 @@ import (
 
 // Add createMovieHandler for "POST /v1/movies" endpoint
 func (app *application) createMovieHandler(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(rw, "Create a new movie")
+	var input struct {
+		Title   string   `json:"title"`
+		Year    int32    `json:"year"`
+		Runtime int32    `json:"runtime"`
+		Genres  []string `json:"genres"`
+	}
+
+	err := app.readJSON(rw, r, &input)
+	if err != nil {
+		app.badRequestResponse(rw, r, err)
+		return
+	}
+
+	fmt.Fprintf(rw, "%+v\n", input)
 }
 
 // Add showMovieHandler for "GET /v1/movies/:id" endpoint + retrieve interpolated "id" parameter from current URL
