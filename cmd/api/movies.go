@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/BunnyTheLifeguard/greenlight/internal/data"
+	"github.com/BunnyTheLifeguard/greenlight/internal/validator"
 )
 
 // Add createMovieHandler for "POST /v1/movies" endpoint
@@ -20,6 +21,20 @@ func (app *application) createMovieHandler(rw http.ResponseWriter, r *http.Reque
 	err := app.readJSON(rw, r, &input)
 	if err != nil {
 		app.badRequestResponse(rw, r, err)
+		return
+	}
+
+	movie := &data.Movie{
+		Title:   input.Title,
+		Year:    input.Year,
+		Runtime: input.Runtime,
+		Genres:  input.Genres,
+	}
+
+	v := validator.New()
+
+	if data.ValidateMovie(v, movie); !v.Valid() {
+		app.failedValidationResponse(rw, r, v.Errors)
 		return
 	}
 
