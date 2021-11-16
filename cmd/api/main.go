@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/BunnyTheLifeguard/greenlight/internal/data"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -35,6 +36,7 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	models data.Models
 }
 
 func init() {
@@ -75,12 +77,13 @@ func main() {
 
 	logger.Printf("database connection pool established")
 
-	// dataColl := openCollection(db, cfg, cfg.db.data)
+	dataColl := openCollection(db, cfg, cfg.db.data)
 
 	// Declare an instance of the application struct containing config struct & logger
 	app := &application{
 		config: cfg,
 		logger: logger,
+		models: data.NewModels(dataColl),
 	}
 
 	// Declare a HTTP server with timeout settings that listens on provided port in config struct and uses servemux from above as handler

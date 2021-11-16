@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/BunnyTheLifeguard/greenlight/internal/validator"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Movie struct
@@ -15,6 +16,11 @@ type Movie struct {
 	Runtime   Runtime   `json:"runtime,omitempty"`
 	Genres    []string  `json:"genres,omitempty"`
 	Version   int32     `json:"version"`
+}
+
+// MovieModel struct type wraps a MongoDB collection
+type MovieModel struct {
+	Collection *mongo.Collection
 }
 
 // ValidateMovie check for valid JSON
@@ -33,4 +39,24 @@ func ValidateMovie(v *validator.Validator, movie *Movie) {
 	v.Check(len(movie.Genres) >= 1, "genres", "must contain at least 1 genre")
 	v.Check(len(movie.Genres) <= 5, "genres", "must not contain more than 5 genres")
 	v.Check(validator.Unique(movie.Genres), "genres", "must not contain duplicate values")
+}
+
+// Insert placeholder method for inserting a new record
+func (m MovieModel) Insert(movie *Movie) error {
+	return nil
+}
+
+// Get placeholder method for fetching a specific record
+func (m MovieModel) Get(id string) (*Movie, error) {
+	return nil, nil
+}
+
+// Update placeholder method for updating a specific record
+func (m MovieModel) Update(movie *Movie) error {
+	return nil
+}
+
+// Delete placeholder method for deleting a specific record
+func (m MovieModel) Delete(id string) error {
+	return nil
 }
