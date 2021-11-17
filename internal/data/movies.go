@@ -93,8 +93,23 @@ func (m MovieModel) Get(id string) (*Movie, error) {
 	return result, nil
 }
 
-// Update placeholder method for updating a specific record
-func (m MovieModel) Update(movie *Movie) error {
+// Update method for editing a specific record
+func (m MovieModel) Update(movie *Movie, id string) error {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	update := bson.M{"$set": bson.M{"title": movie.Title, "year": movie.Year, "runtime": movie.Runtime, "genres": movie.Genres}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err = m.Collection.UpdateByID(ctx, oid, update)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
