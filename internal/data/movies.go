@@ -119,7 +119,22 @@ func (m MovieModel) Update(movie *Movie, id string) error {
 	return nil
 }
 
-// Delete placeholder method for deleting a specific record
+// Delete method for removing a specific record
 func (m MovieModel) Delete(id string) error {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	delete := bson.M{"_id": oid}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err = m.Collection.DeleteOne(ctx, delete)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

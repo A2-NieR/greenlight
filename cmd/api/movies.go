@@ -136,3 +136,24 @@ func (app *application) updateMovieHandler(rw http.ResponseWriter, r *http.Reque
 		app.serverErrorResponse(rw, r, err)
 	}
 }
+
+func (app *application) deleteMovieHandler(rw http.ResponseWriter, r *http.Request) {
+	id := app.readIDParam(r)
+
+	err := app.models.Movies.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, mongo.ErrNoDocuments):
+			app.notFoundResponse(rw, r)
+		default:
+			app.serverErrorResponse(rw, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(rw, http.StatusOK, envelope{"message": "movie successfully deleted"}, nil)
+	if err != nil {
+		app.serverErrorResponse(rw, r, err)
+	}
+
+}
