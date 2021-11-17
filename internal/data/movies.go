@@ -1,21 +1,25 @@
 package data
 
 import (
+	"context"
 	"time"
 
 	"github.com/BunnyTheLifeguard/greenlight/internal/validator"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Movie struct
 type Movie struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"-"`
-	Title     string    `json:"title"`
-	Year      int32     `json:"year,omitempty"`
-	Runtime   Runtime   `json:"runtime,omitempty"`
-	Genres    []string  `json:"genres,omitempty"`
-	Version   int32     `json:"version"`
+	OID       primitive.ObjectID `json:"-" bson:"_id,omitempty"`
+	ID        string             `json:"id,omitempty" bson:"id,omitempty"`
+	CreatedAt time.Time          `json:"-"`
+	Title     string             `json:"title" bson:"title,omitempty"`
+	Year      int32              `json:"year,omitempty" bson:"year,omitempty"`
+	Runtime   Runtime            `json:"runtime,omitempty" bson:"runtime,omitempty"`
+	Genres    []string           `json:"genres,omitempty" bson:"genres,omitempty"`
+	Version   int32              `json:"-"`
 }
 
 // MovieModel struct type wraps a MongoDB collection
@@ -42,8 +46,31 @@ func ValidateMovie(v *validator.Validator, movie *Movie) {
 }
 
 // Insert placeholder method for inserting a new record
-func (m MovieModel) Insert(movie *Movie) error {
-	return nil
+func (m MovieModel) Insert(movie *Movie) (string, error) {
+	oid := primitive.NewObjectID()
+
+	args := Movie{
+		OID:       oid,
+		ID:        oid.Hex(),
+		CreatedAt: time.Now(),
+		Title:     movie.Title,
+		Year:      movie.Year,
+		Runtime:   movie.Runtime,
+		Genres:    movie.Genres,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := m.Collection.InsertOne(ctx, args)
+	if err != nil {
+		return "", err
+	}
+
+	filter := bson.M{"_id": oid}
+	update := bson.M{"$inc": bson.M{"version": 1}}
+	_ = m.Collection.FindOneAndUpdate(ctx, filter, update)
+	return oid.Hex(), nil
 }
 
 // Get placeholder method for fetching a specific record

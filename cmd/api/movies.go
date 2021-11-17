@@ -7,6 +7,7 @@ import (
 
 	"github.com/BunnyTheLifeguard/greenlight/internal/data"
 	"github.com/BunnyTheLifeguard/greenlight/internal/validator"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Add createMovieHandler for "POST /v1/movies" endpoint
@@ -38,19 +39,34 @@ func (app *application) createMovieHandler(rw http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	fmt.Fprintf(rw, "%+v\n", input)
+	id, err := app.models.Movies.Insert(movie)
+	if err != nil {
+		app.serverErrorResponse(rw, r, err)
+		return
+	}
+	movie.ID = id
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/movies/%s", id))
+
+	err = app.writeJSON(rw, http.StatusCreated, envelope{"movie": movie}, headers)
+	if err != nil {
+		app.serverErrorResponse(rw, r, err)
+	}
 }
 
 // Add showMovieHandler for "GET /v1/movies/:id" endpoint + retrieve interpolated "id" parameter from current URL
 func (app *application) showMovieHandler(rw http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r)
+	id := app.readIDParam(r)
+	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		app.notFoundResponse(rw, r)
 		return
 	}
 
 	movie := data.Movie{
-		ID:        id,
+		OID:       oid,
+		ID:        oid.Hex(),
 		CreatedAt: time.Now(),
 		Title:     "Casablanca",
 		Runtime:   102,
