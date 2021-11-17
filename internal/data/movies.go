@@ -100,7 +100,13 @@ func (m MovieModel) Update(movie *Movie, id string) error {
 		return err
 	}
 
-	update := bson.M{"$set": bson.M{"title": movie.Title, "year": movie.Year, "runtime": movie.Runtime, "genres": movie.Genres}}
+	update := bson.M{
+		"$set": bson.M{
+			"title":   movie.Title,
+			"year":    movie.Year,
+			"runtime": movie.Runtime,
+			"genres":  movie.Genres},
+		"$inc": bson.M{"version": 1}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
