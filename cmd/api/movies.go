@@ -1,13 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/BunnyTheLifeguard/greenlight/internal/data"
 	"github.com/BunnyTheLifeguard/greenlight/internal/validator"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Add createMovieHandler for "POST /v1/movies" endpoint
@@ -58,20 +58,17 @@ func (app *application) createMovieHandler(rw http.ResponseWriter, r *http.Reque
 // Add showMovieHandler for "GET /v1/movies/:id" endpoint + retrieve interpolated "id" parameter from current URL
 func (app *application) showMovieHandler(rw http.ResponseWriter, r *http.Request) {
 	id := app.readIDParam(r)
-	oid, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		app.notFoundResponse(rw, r)
-		return
-	}
 
-	movie := data.Movie{
-		OID:       oid,
-		ID:        oid.Hex(),
-		CreatedAt: time.Now(),
-		Title:     "Casablanca",
-		Runtime:   102,
-		Genres:    []string{"drama", "romance", "war"},
-		Version:   1,
+	movie, err := app.models.Movies.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, mongo.ErrNoDocuments):
+			app.notFoundResponse(rw, r)
+		default:
+			app.serverErrorResponse(rw, r, err)
+		}
+
+		return
 	}
 
 	err = app.writeJSON(rw, http.StatusOK, envelope{"movie": movie}, nil)

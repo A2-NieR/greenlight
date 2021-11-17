@@ -45,7 +45,7 @@ func ValidateMovie(v *validator.Validator, movie *Movie) {
 	v.Check(validator.Unique(movie.Genres), "genres", "must not contain duplicate values")
 }
 
-// Insert placeholder method for inserting a new record
+// Insert method for creating a new record
 func (m MovieModel) Insert(movie *Movie) (string, error) {
 	oid := primitive.NewObjectID()
 
@@ -73,9 +73,24 @@ func (m MovieModel) Insert(movie *Movie) (string, error) {
 	return oid.Hex(), nil
 }
 
-// Get placeholder method for fetching a specific record
+// Get method for fetching a specific record
 func (m MovieModel) Get(id string) (*Movie, error) {
-	return nil, nil
+	var result *Movie
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": oid}
+	err = m.Collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // Update placeholder method for updating a specific record
