@@ -96,10 +96,10 @@ func (app *application) updateMovieHandler(rw http.ResponseWriter, r *http.Reque
 
 	// Input struct to hold expected data from client
 	var input struct {
-		Title   string       `json:"title"`
-		Year    int32        `json:"year"`
-		Runtime data.Runtime `json:"runtime"`
-		Genres  []string     `json:"genres"`
+		Title   *string       `json:"title"`
+		Year    *int32        `json:"year"`
+		Runtime *data.Runtime `json:"runtime"`
+		Genres  []string      `json:"genres"`
 	}
 
 	// Read JSON request body into input struct
@@ -109,11 +109,18 @@ func (app *application) updateMovieHandler(rw http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Copy values from req body to resp. fields of movie record
-	movie.Title = input.Title
-	movie.Year = input.Year
-	movie.Runtime = input.Runtime
-	movie.Genres = input.Genres
+	// Check if values are provided in JSON request body
+	if input.Title != nil {
+		movie.Title = *input.Title
+	}
+
+	if input.Year != nil {
+		movie.Year = *input.Year
+	}
+
+	if input.Runtime != nil {
+		movie.Runtime = *input.Runtime
+	}
 
 	// Validate updated movie record
 	v := validator.New()
