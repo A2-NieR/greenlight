@@ -138,3 +138,21 @@ func (m MovieModel) Delete(id string) error {
 
 	return nil
 }
+
+// GetAll method to list of all records
+func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cursor, err := m.Collection.Find(ctx, bson.D{})
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*Movie
+	if err = cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
