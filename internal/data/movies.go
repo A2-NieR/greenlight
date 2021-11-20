@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Movie struct
@@ -144,7 +145,41 @@ func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*M
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	cursor, err := m.Collection.Find(ctx, bson.D{})
+	var sort bson.D
+	switch filters.Sort {
+	case "title":
+		sort = bson.D{{Key: "title", Value: 1}}
+	case "-title":
+		sort = bson.D{{Key: "title", Value: -1}}
+	case "runtime":
+		sort = bson.D{{Key: "runtime", Value: 1}}
+	case "-runtime":
+		sort = bson.D{{Key: "runtime", Value: -1}}
+	case "year":
+		sort = bson.D{{Key: "year", Value: 1}}
+	case "-year":
+		sort = bson.D{{Key: "year", Value: -1}}
+	case "-id":
+		sort = bson.D{{Key: "id", Value: -1}}
+	default:
+		sort = bson.D{{Key: "id", Value: 1}}
+	}
+	opts := options.Find().SetSort(sort)
+
+	var filter bson.D
+	if title != "" && len(genres) != 0 {
+		filter = bson.D{
+			{Key: "title", Value: title},
+			{Key: "genres", Value: bson.D{{"$all", genres}}}}
+	} else if title != "" && len(genres) == 0 {
+		filter = bson.D{{Key: "title", Value: title}}
+	} else if title == "" && len(genres) != 0 {
+		filter = bson.D{{Key: "genres", Value: bson.D{{"$all", genres}}}}
+	} else {
+		filter = bson.D{}
+	}
+
+	cursor, err := m.Collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
