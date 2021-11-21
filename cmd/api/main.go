@@ -11,6 +11,7 @@ import (
 
 	"github.com/BunnyTheLifeguard/greenlight/internal/data"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -78,6 +79,9 @@ func main() {
 	logger.Printf("database connection pool established")
 
 	dataColl := openCollection(db, cfg, cfg.db.data)
+
+	// Add text indexes for search functionality
+	_, err = dataColl.Indexes().CreateOne(context.Background(), mongo.IndexModel{Keys: bson.D{{"title", "text"}, {"genres", "text"}}})
 
 	// Declare an instance of the application struct containing config struct & logger
 	app := &application{

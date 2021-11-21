@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/BunnyTheLifeguard/greenlight/internal/validator"
@@ -168,13 +169,13 @@ func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*M
 
 	var filter bson.D
 	if title != "" && len(genres) != 0 {
-		filter = bson.D{
-			{Key: "title", Value: title},
-			{Key: "genres", Value: bson.D{{"$all", genres}}}}
+		searchSlice := append([]string{title}, genres...)
+		searchString := strings.Join(searchSlice, ", ")
+		filter = bson.D{{"$text", bson.D{{"$search", searchString}}}}
 	} else if title != "" && len(genres) == 0 {
-		filter = bson.D{{Key: "title", Value: title}}
+		filter = bson.D{{"$text", bson.D{{"$search", title}}}}
 	} else if title == "" && len(genres) != 0 {
-		filter = bson.D{{Key: "genres", Value: bson.D{{"$all", genres}}}}
+		filter = bson.D{{"$text", bson.D{{"$search", bson.D{{"$all", genres}}}}}}
 	} else {
 		filter = bson.D{}
 	}
