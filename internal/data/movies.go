@@ -165,7 +165,7 @@ func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*M
 	default:
 		sort = bson.D{{Key: "id", Value: 1}}
 	}
-	opts := options.Find().SetSort(sort)
+	opts := options.Find().SetSort(sort).SetLimit(int64(filters.PageSize)).SetSkip(int64(filters.Page))
 
 	var filter bson.D
 	if title != "" && len(genres) != 0 {
