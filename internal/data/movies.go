@@ -142,7 +142,7 @@ func (m MovieModel) Delete(id string) error {
 }
 
 // GetAll method to list of all records
-func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, error) {
+func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, Metadata, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -165,7 +165,8 @@ func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*M
 	default:
 		sort = bson.D{{Key: "id", Value: 1}}
 	}
-	opts := options.Find().SetSort(sort).SetLimit(int64(filters.PageSize)).SetSkip(int64(filters.Page))
+
+	findOpts := options.Find().SetSort(sort).SetLimit(int64(filters.limit())).SetSkip(int64(filters.offset()))
 
 	var filter bson.D
 	if title != "" && len(genres) != 0 {
@@ -175,20 +176,32 @@ func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*M
 	} else if title != "" && len(genres) == 0 {
 		filter = bson.D{{"$text", bson.D{{"$search", title}}}}
 	} else if title == "" && len(genres) != 0 {
-		filter = bson.D{{"$text", bson.D{{"$search", bson.D{{"$all", genres}}}}}}
+		searchString := strings.Join(genres, ", ")
+		filter = bson.D{{"$text", bson.D{{"$search", searchString}}}}
 	} else {
 		filter = bson.D{}
 	}
 
-	cursor, err := m.Collection.Find(ctx, filter, opts)
+	countOpts := options.Count()
+	if filters.limit() != 0 {
+		countOpts = options.Count().SetLimit(int64(filters.limit())).SetSkip(int64(filters.offset()))
+	}
+	count, err := m.Collection.CountDocuments(ctx, filter, countOpts)
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
+	}
+
+	metadata := calculateMetadata(int(count), filters.Page, filters.PageSize)
+
+	cursor, err := m.Collection.Find(ctx, filter, findOpts)
+	if err != nil {
+		return nil, Metadata{}, err
 	}
 
 	var results []*Movie
 	if err = cursor.All(ctx, &results); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return results, nil
+	return results, metadata, nil
 }

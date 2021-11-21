@@ -199,14 +199,14 @@ func (app *application) listMoviesHandler(rw http.ResponseWriter, r *http.Reques
 	}
 
 	// Call GetAll() method to retrieve all movies from db passing in filters if provided
-	movies, err := app.models.Movies.GetAll(input.Title, input.Genres, input.Filters)
+	movies, metadata, err := app.models.Movies.GetAll(input.Title, input.Genres, input.Filters)
 	if err != nil {
 		app.serverErrorResponse(rw, r, err)
 		return
 	}
 
 	// Send JSON response with movie list data
-	err = app.writeJSON(rw, http.StatusOK, envelope{"movies": movies}, nil)
+	err = app.writeJSON(rw, http.StatusOK, envelope{"movies": movies, "metadata": metadata}, nil)
 	if err != nil {
 		app.serverErrorResponse(rw, r, err)
 	}
