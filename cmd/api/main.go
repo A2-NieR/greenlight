@@ -32,6 +32,11 @@ type config struct {
 		name         string
 		data         string
 	}
+	limiter struct {
+		rps     float64
+		burst   int
+		enabled bool
+	}
 }
 
 // Application struct to hold dependencies for HTTP handlers, helpers & middleware
@@ -62,6 +67,11 @@ func main() {
 	// Connection pool cli flags
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "MongoDB max open connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "MongoDB max connection idle time")
+
+	// Rate limiter cli flags
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
+	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enabled rate limiter")
 
 	flag.Parse()
 
