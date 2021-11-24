@@ -21,11 +21,11 @@ var (
 type User struct {
 	OID       primitive.ObjectID `json:"-" bson:"_id"`
 	ID        string             `json:"id" bson:"id"`
-	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
+	CreatedAt time.Time          `json:"-" bson:"created_at"`
 	Name      string             `json:"name" bson:"name"`
 	Email     string             `json:"email" bson:"email"`
 	Password  password           `json:"-" bson:"password"`
-	Activated bool               `json:"activated" bson:"password"`
+	Activated bool               `json:"activated" bson:"activated"`
 	Version   int                `json:"-" bson:"version"`
 }
 
