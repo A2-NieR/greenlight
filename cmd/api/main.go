@@ -103,12 +103,12 @@ func main() {
 		context.Background(),
 		[]mongo.IndexModel{
 			{
-				Keys:    bson.D{{Key: "name", Value: 1}},
-				Options: options.Index().SetUnique(true),
+				Keys:    bson.M{"name": 1},
+				Options: options.Index().SetUnique(true).SetCollation(&options.Collation{Locale: "en", Strength: 2}),
 			},
 			{
-				Keys:    bson.D{{Key: "email", Value: 1}},
-				Options: options.Index().SetUnique(true),
+				Keys:    bson.M{"email": 1},
+				Options: options.Index().SetUnique(true).SetCollation(&options.Collation{Locale: "en", Strength: 2}),
 			},
 		},
 	)
