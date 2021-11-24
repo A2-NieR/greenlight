@@ -29,6 +29,7 @@ type config struct {
 		maxIdleTime  string
 		name         string
 		data         string
+		user         string
 	}
 	limiter struct {
 		rps     float64
@@ -61,6 +62,7 @@ func main() {
 	flag.StringVar(&cfg.db.uri, "db-uri", os.Getenv("MONGODB_URI"), "MongoDB URI")
 	flag.StringVar(&cfg.db.name, "db-name", os.Getenv("DB"), "DB Name")
 	flag.StringVar(&cfg.db.data, "db-data", os.Getenv("DATA"), "Collection Data")
+	flag.StringVar(&cfg.db.user, "db-user", os.Getenv("USER"), "Collection Data")
 
 	// Connection pool cli flags
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "MongoDB max open connections")
@@ -88,15 +90,37 @@ func main() {
 	logger.PrintInfo("database connection pool established", nil)
 
 	dataColl := openCollection(db, cfg, cfg.db.data)
+	userColl := openCollection(db, cfg, cfg.db.user)
 
 	// Add text indexes for search functionality
 	_, err = dataColl.Indexes().CreateOne(context.Background(), mongo.IndexModel{Keys: bson.D{{"title", "text"}, {"genres", "text"}}})
+	if err != nil {
+		logger.PrintFatal(err, nil)
+	}
+
+	// Flag username & email as unique
+	_, err = userColl.Indexes().CreateMany(
+		context.Background(),
+		[]mongo.IndexModel{
+			{
+				Keys:    bson.D{{Key: "name", Value: 1}},
+				Options: options.Index().SetUnique(true),
+			},
+			{
+				Keys:    bson.D{{Key: "email", Value: 1}},
+				Options: options.Index().SetUnique(true),
+			},
+		},
+	)
+	if err != nil {
+		logger.PrintFatal(err, nil)
+	}
 
 	// Declare an instance of the application struct containing config struct & logger
 	app := &application{
 		config: cfg,
 		logger: logger,
-		models: data.NewModels(dataColl),
+		models: data.NewModels(dataColl, userColl),
 	}
 
 	err = app.serve()
