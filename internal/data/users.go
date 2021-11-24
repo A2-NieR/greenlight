@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/BunnyTheLifeguard/greenlight/internal/validator"
@@ -14,13 +15,14 @@ import (
 
 // Custom ErrDuplicateEmail error
 var (
+	ErrDuplicateName  = errors.New("duplicate name")
 	ErrDuplicateEmail = errors.New("duplicate email")
 )
 
 // User represents individual user, pw & version excluded from res
 type User struct {
 	OID       primitive.ObjectID `json:"-" bson:"_id"`
-	ID        string             `json:"id" bson:"id"`
+	ID        string             `json:"-" bson:"id"`
 	CreatedAt time.Time          `json:"-" bson:"created_at"`
 	Name      string             `json:"name" bson:"name"`
 	Email     string             `json:"email" bson:"email"`
@@ -96,7 +98,7 @@ func ValidateUser(v *validator.Validator, user *User) {
 }
 
 // Insert method to create a new user
-func (m UserModel) Insert(user *User) (string, error) {
+func (m UserModel) Insert(user *User) error {
 	oid := primitive.NewObjectID()
 
 	args := User{
@@ -114,13 +116,19 @@ func (m UserModel) Insert(user *User) (string, error) {
 
 	_, err := m.Collection.InsertOne(ctx, args)
 	if err != nil {
-		return "", err
+		mongoErr := err.(mongo.WriteException)
+		if strings.Contains(mongoErr.WriteErrors[0].Message, "name") {
+			return ErrDuplicateName
+		} else if strings.Contains(mongoErr.WriteErrors[0].Message, "email") {
+			return ErrDuplicateEmail
+		}
+		return err
 	}
 
 	filter := bson.M{"_id": oid}
 	update := bson.M{"$inc": bson.M{"version": 1}}
 	_ = m.Collection.FindOneAndUpdate(ctx, filter, update)
-	return oid.Hex(), nil
+	return nil
 }
 
 // GetByEmail method to get details of specific user

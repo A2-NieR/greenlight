@@ -46,9 +46,12 @@ func (app *application) registerUserHandler(rw http.ResponseWriter, r *http.Requ
 	}
 
 	// Insert user data into DB
-	id, err := app.models.User.Insert(user)
+	err = app.models.User.Insert(user)
 	if err != nil {
 		switch {
+		case errors.Is(err, data.ErrDuplicateName):
+			v.AddError("email", "a user with this name already exists")
+			app.failedValidationResponse(rw, r, v.Errors)
 		case errors.Is(err, data.ErrDuplicateEmail):
 			v.AddError("email", "a user with this email address already exists")
 			app.failedValidationResponse(rw, r, v.Errors)
@@ -57,8 +60,6 @@ func (app *application) registerUserHandler(rw http.ResponseWriter, r *http.Requ
 		}
 		return
 	}
-
-	user.ID = id
 
 	// Write & send 201 JSON response with user data
 	err = app.writeJSON(rw, http.StatusCreated, envelope{"user": user}, nil)
