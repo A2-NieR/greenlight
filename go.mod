@@ -3,9 +3,15 @@ module github.com/BunnyTheLifeguard/greenlight
 go 1.17
 
 require (
+	github.com/go-mail/mail/v2 v2.3.0
 	github.com/joho/godotenv v1.4.0
 	github.com/julienschmidt/httprouter v1.3.0
 	go.mongodb.org/mongo-driver v1.7.5
+)
+
+require (
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	gopkg.in/mail.v2 v2.3.1 // indirect
 )
 
 require (

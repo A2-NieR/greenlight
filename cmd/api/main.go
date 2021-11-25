@@ -9,6 +9,7 @@ import (
 
 	"github.com/BunnyTheLifeguard/greenlight/internal/data"
 	"github.com/BunnyTheLifeguard/greenlight/internal/jsonlog"
+	"github.com/BunnyTheLifeguard/greenlight/internal/mailer"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -36,6 +37,13 @@ type config struct {
 		burst   int
 		enabled bool
 	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 // Application struct to hold dependencies for HTTP handlers, helpers & middleware
@@ -43,6 +51,7 @@ type application struct {
 	config config
 	logger *jsonlog.Logger
 	models data.Models
+	mailer mailer.Mailer
 }
 
 func init() {
@@ -72,6 +81,13 @@ func main() {
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enabled rate limiter")
+
+	// SMTP config settings
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SMTPUSER"), "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("SMTPPASSWORD"), "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <36411819+BunnyTheLifeguard@users.noreply.github.com>", "SMTP sender")
 
 	flag.Parse()
 
@@ -121,6 +137,7 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(dataColl, userColl),
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 
 	err = app.serve()
