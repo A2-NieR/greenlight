@@ -61,15 +61,17 @@ func (app *application) registerUserHandler(rw http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Send welcome mail using registered user data
-	err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
-	if err != nil {
-		app.serverErrorResponse(rw, r, err)
-		return
-	}
+	// Background welcome-email routine
+	app.background(func() {
+		// Send welcome mail using registered user data
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
+		if err != nil {
+			app.logger.PrintError(err, nil)
+		}
+	})
 
 	// Write & send 201 JSON response with user data
-	err = app.writeJSON(rw, http.StatusCreated, envelope{"user": user}, nil)
+	err = app.writeJSON(rw, http.StatusAccepted, envelope{"user": user}, nil)
 	if err != nil {
 		app.serverErrorResponse(rw, r, err)
 	}

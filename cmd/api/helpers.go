@@ -132,3 +132,18 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 
 	return i
 }
+
+func (app *application) background(fn func()) {
+	// Launch background routine
+	go func() {
+		// Recover any panic
+		defer func() {
+			if err := recover(); err != nil {
+				app.logger.PrintError(fmt.Errorf("%s", err), nil)
+			}
+		}()
+
+		// Execute parameter function
+		fn()
+	}()
+}
