@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/BunnyTheLifeguard/greenlight/internal/data"
 	"github.com/BunnyTheLifeguard/greenlight/internal/validator"
@@ -46,7 +47,7 @@ func (app *application) registerUserHandler(rw http.ResponseWriter, r *http.Requ
 	}
 
 	// Insert user data into DB
-	err = app.models.User.Insert(user)
+	id, err := app.models.User.Insert(user)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrDuplicateName):
@@ -61,10 +62,22 @@ func (app *application) registerUserHandler(rw http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Generate new activation token for user
+	token, err := app.models.Token.New(id, time.Hour, data.ScopeActivation)
+	if err != nil {
+		app.serverErrorResponse(rw, r, err)
+		return
+	}
+
 	// Background welcome-email routine
 	app.background(func() {
+		// Map to hold the data for activation email
+		data := map[string]interface{}{
+			"activationToken": token.Plaintext,
+			"userID":          id,
+		}
 		// Send welcome mail using registered user data
-		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
 		if err != nil {
 			app.logger.PrintError(err, nil)
 		}

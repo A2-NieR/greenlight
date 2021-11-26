@@ -15,12 +15,14 @@ var (
 type Models struct {
 	Movies MovieModel
 	User   UserModel
+	Token  TokenModel
 }
 
 // NewModels returns Models struct containing initialized MovieModel
-func NewModels(data, user *mongo.Collection) Models {
+func NewModels(data, user, token *mongo.Collection) Models {
 	return Models{
 		Movies: MovieModel{Collection: data},
 		User:   UserModel{Collection: user},
+		Token:  TokenModel{Collection: token},
 	}
 }

@@ -32,6 +32,7 @@ type config struct {
 		name         string
 		data         string
 		user         string
+		token        string
 	}
 	limiter struct {
 		rps     float64
@@ -73,7 +74,8 @@ func main() {
 	flag.StringVar(&cfg.db.uri, "db-uri", os.Getenv("MONGODB_URI"), "MongoDB URI")
 	flag.StringVar(&cfg.db.name, "db-name", os.Getenv("DB"), "DB Name")
 	flag.StringVar(&cfg.db.data, "db-data", os.Getenv("DATA"), "Collection Data")
-	flag.StringVar(&cfg.db.user, "db-user", os.Getenv("USER"), "Collection Data")
+	flag.StringVar(&cfg.db.user, "db-user", os.Getenv("USER"), "Collection User")
+	flag.StringVar(&cfg.db.token, "db-token", os.Getenv("TOKEN"), "Collection Token")
 
 	// Connection pool cli flags
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "MongoDB max open connections")
@@ -109,6 +111,7 @@ func main() {
 
 	dataColl := openCollection(db, cfg, cfg.db.data)
 	userColl := openCollection(db, cfg, cfg.db.user)
+	tokenColl := openCollection(db, cfg, cfg.db.token)
 
 	// Add text indexes for search functionality
 	_, err = dataColl.Indexes().CreateOne(context.Background(), mongo.IndexModel{Keys: bson.D{{"title", "text"}, {"genres", "text"}}})
@@ -138,7 +141,7 @@ func main() {
 	app := &application{
 		config: cfg,
 		logger: logger,
-		models: data.NewModels(dataColl, userColl),
+		models: data.NewModels(dataColl, userColl, tokenColl),
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 

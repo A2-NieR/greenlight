@@ -98,12 +98,13 @@ func ValidateUser(v *validator.Validator, user *User) {
 }
 
 // Insert method to create a new user
-func (m UserModel) Insert(user *User) error {
+func (m UserModel) Insert(user *User) (string, error) {
 	oid := primitive.NewObjectID()
+	id := oid.Hex()
 
 	args := User{
 		OID:       oid,
-		ID:        oid.Hex(),
+		ID:        id,
 		CreatedAt: time.Now(),
 		Name:      user.Name,
 		Email:     user.Email,
@@ -118,17 +119,17 @@ func (m UserModel) Insert(user *User) error {
 	if err != nil {
 		mongoErr := err.(mongo.WriteException)
 		if strings.Contains(mongoErr.WriteErrors[0].Message, "name") {
-			return ErrDuplicateName
+			return "", ErrDuplicateName
 		} else if strings.Contains(mongoErr.WriteErrors[0].Message, "email") {
-			return ErrDuplicateEmail
+			return "", ErrDuplicateEmail
 		}
-		return err
+		return "", err
 	}
 
 	filter := bson.M{"_id": oid}
 	update := bson.M{"$inc": bson.M{"version": 1}}
 	_ = m.Collection.FindOneAndUpdate(ctx, filter, update)
-	return nil
+	return id, nil
 }
 
 // GetByEmail method to get details of specific user
