@@ -1,7 +1,7 @@
 {{define "subject"}}Welcome to Greenlight!{{end}}
 
 {{define "plainBody"}}
-Hi,
+Hi {{.name}},
 
 Thanks for signing up for a Greenlight account. We're excited to have you on board!
 
@@ -28,7 +28,7 @@ The Greenlight Team
 </head>
 
 <body>
-  <p>Hi,</p>
+  <p>Hi {{.name}},</p>
   <p>Thanks for signing up for a Greenlight account. We're excited to have you on board!</p>
   <p>For future reference, your user ID number is {{.userID}}.</p>
   <p>Please send a request to the <code>PUT /v1/users/activated</code> endpoint with the following JSON body to activate your account:</p>

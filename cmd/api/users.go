@@ -75,6 +75,7 @@ func (app *application) registerUserHandler(rw http.ResponseWriter, r *http.Requ
 		data := map[string]interface{}{
 			"activationToken": token.Plaintext,
 			"userID":          id,
+			"name":            user.Name,
 		}
 		// Send welcome mail using registered user data
 		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
