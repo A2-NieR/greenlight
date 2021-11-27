@@ -104,6 +104,28 @@ func (m TokenModel) Insert(token *Token) error {
 	return nil
 }
 
+// Get method for userID via token
+func (m TokenModel) Get(tokenScope, tokenPlaintext string) (string, error) {
+	var result *Token
+	// Calculate SHA-256 hash of plaintext token provided by client
+	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
+
+	filter := bson.M{
+		"hash":  tokenHash[:],
+		"scope": tokenScope,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := m.Collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return "", err
+	}
+
+	return result.UserID.Hex(), nil
+}
+
 // DeleteAllForUser removes all tokens for specific user & scope
 func (m TokenModel) DeleteAllForUser(scope, userID string) error {
 	uoid, err := primitive.ObjectIDFromHex(userID)

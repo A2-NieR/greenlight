@@ -182,3 +182,24 @@ func (m UserModel) Update(user *User, id string) error {
 
 	return nil
 }
+
+// GetForToken method for user details from token
+func (m UserModel) GetForToken(userID string) (*User, error) {
+	var result *User
+	oid, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	filter := bson.M{"_id": oid}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = m.Collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

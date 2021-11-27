@@ -137,6 +137,15 @@ func main() {
 		logger.PrintFatal(err, nil)
 	}
 
+	// Add TimeToLive for expiry field to autodelete expired tokens
+	_, err = tokenColl.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    bson.D{{Key: "expiry", Value: 1}},
+		Options: options.Index().SetExpireAfterSeconds(1),
+	})
+	if err != nil {
+		logger.PrintFatal(err, nil)
+	}
+
 	// Declare an instance of the application struct containing config struct & logger
 	app := &application{
 		config: cfg,
