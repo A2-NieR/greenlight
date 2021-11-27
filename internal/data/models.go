@@ -11,14 +11,14 @@ var (
 	ErrEditConflict = errors.New("edit conflict")
 )
 
-// Models struct wraps MovieModel
+// Models struct wraps Models
 type Models struct {
 	Movies MovieModel
 	User   UserModel
 	Token  TokenModel
 }
 
-// NewModels returns Models struct containing initialized MovieModel
+// NewModels returns Models struct containing initialized Models
 func NewModels(data, user, token *mongo.Collection) Models {
 	return Models{
 		Movies: MovieModel{Collection: data},
