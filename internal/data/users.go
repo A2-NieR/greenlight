@@ -34,7 +34,7 @@ type User struct {
 // Pointer to string to distinguish between pw not present & empty string ""
 type password struct {
 	plaintext *string
-	hash      []byte
+	Hash      []byte `bson:"hash"`
 }
 
 // UserModel wraps connection pool
@@ -49,13 +49,13 @@ func (p *password) Set(plaintextPassword string) error {
 	}
 
 	p.plaintext = &plaintextPassword
-	p.hash = hash
+	p.Hash = hash
 
 	return nil
 }
 
 func (p *password) Matches(plaintextPassword string) (bool, error) {
-	err := bcrypt.CompareHashAndPassword(p.hash, []byte(plaintextPassword))
+	err := bcrypt.CompareHashAndPassword(p.Hash, []byte(plaintextPassword))
 	if err != nil {
 		switch {
 		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
@@ -92,7 +92,7 @@ func ValidateUser(v *validator.Validator, user *User) {
 		ValidatePasswordPlaintext(v, *user.Password.plaintext)
 	}
 
-	if user.Password.hash == nil {
+	if user.Password.Hash == nil {
 		panic("missing password hash for user")
 	}
 }
