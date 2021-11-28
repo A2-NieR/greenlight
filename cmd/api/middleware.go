@@ -162,3 +162,35 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 	})
 }
+
+// Check if user is anonymous
+func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
+
+		if user.IsAnonymous() {
+			app.authenticationRequiredResponse(rw, r)
+			return
+		}
+
+		next.ServeHTTP(rw, r)
+	})
+}
+
+// Check if user is authenticated AND activated
+func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	fn := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
+
+		// Check if user is activated
+		if !user.Activated {
+			app.inactiveAccountResponse(rw, r)
+			return
+		}
+
+		next.ServeHTTP(rw, r)
+	})
+
+	// Wrap fn with requireAuthenticatedUser() middleware before return
+	return app.requireAuthenticatedUser(fn)
+}

@@ -66,16 +66,26 @@ func (app *application) editConflictResponse(rw http.ResponseWriter, r *http.Req
 	app.errorResponse(rw, r, http.StatusConflict, message)
 }
 
-// 401 Unauthorized Credentials
+// 401 Unauthorized
 func (app *application) invalidCredentialsResponse(rw http.ResponseWriter, r *http.Request) {
 	message := "invalid authentication credentials"
 	app.errorResponse(rw, r, http.StatusUnauthorized, message)
 }
 
-// 401 Unauthorized Token
 func (app *application) invalidAuthenticationTokenResponse(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("WWW-Authenticate", "Bearer")
 
 	message := "invalid or missing authentication token"
 	app.errorResponse(rw, r, http.StatusUnauthorized, message)
+}
+
+func (app *application) authenticationRequiredResponse(rw http.ResponseWriter, r *http.Request) {
+	message := "you must be authenticated to access this resource"
+	app.errorResponse(rw, r, http.StatusUnauthorized, message)
+}
+
+// 403 Forbidden
+func (app *application) inactiveAccountResponse(rw http.ResponseWriter, r *http.Request) {
+	message := "your user account must be activated to access this resource"
+	app.errorResponse(rw, r, http.StatusForbidden, message)
 }
