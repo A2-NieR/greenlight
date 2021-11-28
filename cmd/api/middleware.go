@@ -194,3 +194,24 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 	// Wrap fn with requireAuthenticatedUser() middleware before return
 	return app.requireAuthenticatedUser(fn)
 }
+
+func (app *application) requirePermission(code string, next http.HandlerFunc) http.HandlerFunc {
+	fn := func(rw http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
+
+		permissions, err := app.models.User.GetPermissions(user.ID)
+		if err != nil {
+			app.serverErrorResponse(rw, r, err)
+			return
+		}
+
+		if !app.contains(permissions, code) {
+			app.notPermittedResponse(rw, r)
+			return
+		}
+
+		next.ServeHTTP(rw, r)
+	}
+
+	return app.requireActivatedUser(fn)
+}

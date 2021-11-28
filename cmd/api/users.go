@@ -39,6 +39,10 @@ func (app *application) registerUserHandler(rw http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Set permissions
+	permissions := []string{"movies:read"}
+	user.Permissions = permissions
+
 	v := validator.New()
 
 	// Validate user struct, return error messages to client if checks fail

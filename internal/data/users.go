@@ -24,14 +24,15 @@ var AnonymousUser = &User{}
 
 // User represents individual user, pw & version excluded from res
 type User struct {
-	OID       primitive.ObjectID `json:"-" bson:"_id"`
-	ID        string             `json:"-" bson:"id"`
-	CreatedAt time.Time          `json:"-" bson:"created_at"`
-	Name      string             `json:"name" bson:"name"`
-	Email     string             `json:"email" bson:"email"`
-	Password  password           `json:"-" bson:"password"`
-	Activated bool               `json:"activated" bson:"activated"`
-	Version   int                `json:"-" bson:"version"`
+	OID         primitive.ObjectID `json:"-" bson:"_id"`
+	ID          string             `json:"-" bson:"id"`
+	CreatedAt   time.Time          `json:"-" bson:"created_at"`
+	Name        string             `json:"name" bson:"name"`
+	Email       string             `json:"email" bson:"email"`
+	Password    password           `json:"-" bson:"password"`
+	Activated   bool               `json:"activated" bson:"activated"`
+	Permissions []string           `json:"-" bson:"permissions"`
+	Version     int                `json:"-" bson:"version"`
 }
 
 // Pointer to string to distinguish between pw not present & empty string ""
@@ -111,13 +112,14 @@ func (m UserModel) Insert(user *User) (string, error) {
 	id := oid.Hex()
 
 	args := User{
-		OID:       oid,
-		ID:        id,
-		CreatedAt: time.Now(),
-		Name:      user.Name,
-		Email:     user.Email,
-		Password:  user.Password,
-		Activated: user.Activated,
+		OID:         oid,
+		ID:          id,
+		CreatedAt:   time.Now(),
+		Name:        user.Name,
+		Email:       user.Email,
+		Password:    user.Password,
+		Permissions: user.Permissions,
+		Activated:   user.Activated,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -210,4 +212,25 @@ func (m UserModel) GetForToken(userID string) (*User, error) {
 	}
 
 	return result, nil
+}
+
+// GetPermissions for specific user
+func (m UserModel) GetPermissions(userID string) ([]string, error) {
+	var result *User
+	oid, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	filter := bson.M{"_id": oid}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = m.Collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Permissions, nil
 }

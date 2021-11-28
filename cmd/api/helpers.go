@@ -153,3 +153,12 @@ func (app *application) background(fn func()) {
 		fn()
 	}()
 }
+
+func (app *application) contains(arr []string, code string) bool {
+	for i := range arr {
+		if code == arr[i] {
+			return true
+		}
+	}
+	return false
+}
