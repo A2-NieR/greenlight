@@ -15,17 +15,18 @@ import (
 
 // Constants for token scope
 const (
-	ScopeActivation = "activation"
+	ScopeActivation     = "activation"
+	ScopeAuthentication = "authentication"
 )
 
 // Token struct holds data for individual tokens
 type Token struct {
-	OID       primitive.ObjectID `bson:"_id"`
-	Plaintext string
-	Hash      []byte             `bson:"hash"`
-	UserID    primitive.ObjectID `bson:"user_id"`
-	Expiry    time.Time          `bson:"expiry"`
-	Scope     string             `bson:"scope"`
+	OID       primitive.ObjectID `json:"-" bson:"_id"`
+	Plaintext string             `json:"token"`
+	Hash      []byte             `json:"-" bson:"hash"`
+	UserID    primitive.ObjectID `json:"-" bson:"user_id"`
+	Expiry    time.Time          `json:"expiry" bson:"expiry"`
+	Scope     string             `json:"-" bson:"scope"`
 }
 
 // TokenModel type
