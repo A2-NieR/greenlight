@@ -19,6 +19,9 @@ var (
 	ErrDuplicateEmail = errors.New("duplicate email")
 )
 
+// AnonymousUser if not authorized
+var AnonymousUser = &User{}
+
 // User represents individual user, pw & version excluded from res
 type User struct {
 	OID       primitive.ObjectID `json:"-" bson:"_id"`
@@ -40,6 +43,11 @@ type password struct {
 // UserModel wraps connection pool
 type UserModel struct {
 	Collection *mongo.Collection
+}
+
+// IsAnonymous checks if a User instance is the AnonymousUser
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
 }
 
 func (p *password) Set(plaintextPassword string) error {

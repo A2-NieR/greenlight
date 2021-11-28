@@ -66,8 +66,16 @@ func (app *application) editConflictResponse(rw http.ResponseWriter, r *http.Req
 	app.errorResponse(rw, r, http.StatusConflict, message)
 }
 
-// 401 Unauthorized
+// 401 Unauthorized Credentials
 func (app *application) invalidCredentialsResponse(rw http.ResponseWriter, r *http.Request) {
 	message := "invalid authentication credentials"
+	app.errorResponse(rw, r, http.StatusUnauthorized, message)
+}
+
+// 401 Unauthorized Token
+func (app *application) invalidAuthenticationTokenResponse(rw http.ResponseWriter, r *http.Request) {
+	rw.Header().Set("WWW-Authenticate", "Bearer")
+
+	message := "invalid or missing authentication token"
 	app.errorResponse(rw, r, http.StatusUnauthorized, message)
 }

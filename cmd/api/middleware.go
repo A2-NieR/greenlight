@@ -1,12 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/BunnyTheLifeguard/greenlight/internal/data"
+	"github.com/BunnyTheLifeguard/greenlight/internal/validator"
+	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/time/rate"
 )
 
@@ -90,6 +95,70 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 			mu.Unlock()
 		}
 
+		next.ServeHTTP(rw, r)
+	})
+}
+
+func (app *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		// Add "Vary: Authorization" header to response, indicates to caches the response may vary based on value of Authorization header in request
+		rw.Header().Add("Vary", "Authorization")
+
+		// Retrieve value of Authorization header from req
+		authorizationHeader := r.Header.Get("Authorization")
+
+		// Add anonymous user to req context if no Authorization header found
+		if authorizationHeader == "" {
+			r = app.contextSetUser(r, data.AnonymousUser)
+			next.ServeHTTP(rw, r)
+			return
+		}
+
+		// Split header & check format
+		headerParts := strings.Split(authorizationHeader, " ")
+		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+			app.invalidAuthenticationTokenResponse(rw, r)
+			return
+		}
+
+		// Extract auth token from header parts
+		token := headerParts[1]
+
+		// Validate token
+		v := validator.New()
+
+		if data.ValidateTokenPlaintext(v, token); !v.Valid() {
+			app.invalidAuthenticationTokenResponse(rw, r)
+			return
+		}
+
+		// Retrieve user details associated with auth token
+		userID, err := app.models.Token.Get(data.ScopeAuthentication, token)
+		if err != nil {
+			switch {
+			case errors.Is(err, mongo.ErrNoDocuments):
+				app.invalidAuthenticationTokenResponse(rw, r)
+			default:
+				app.serverErrorResponse(rw, r, err)
+			}
+			return
+		}
+
+		user, err := app.models.User.GetForToken(userID)
+		if err != nil {
+			switch {
+			case errors.Is(err, mongo.ErrNoDocuments):
+				app.invalidAuthenticationTokenResponse(rw, r)
+			default:
+				app.serverErrorResponse(rw, r, err)
+			}
+			return
+		}
+
+		// Add user info to req context
+		r = app.contextSetUser(r, user)
+
+		// Call next handler in chain
 		next.ServeHTTP(rw, r)
 	})
 }
