@@ -5,6 +5,8 @@ import (
 	"flag"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,6 +48,9 @@ type config struct {
 		password string
 		sender   string
 	}
+	cors struct {
+		trustedOrigins []string
+	}
 }
 
 // Application struct to hold dependencies for HTTP handlers, helpers & middleware
@@ -58,7 +63,7 @@ type application struct {
 }
 
 func init() {
-	err := godotenv.Load("../../.env")
+	err := godotenv.Load(filepath.Join(".env"))
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -92,6 +97,12 @@ func main() {
 	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SMTPUSER"), "SMTP username")
 	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("SMTPPASSWORD"), "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <36411819+BunnyTheLifeguard@users.noreply.github.com>", "SMTP sender")
+
+	// CORS flags
+	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
+		cfg.cors.trustedOrigins = strings.Fields(val)
+		return nil
+	})
 
 	flag.Parse()
 
