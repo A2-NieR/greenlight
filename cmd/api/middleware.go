@@ -4,7 +4,6 @@ import (
 	"errors"
 	"expvar"
 	"fmt"
-	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/BunnyTheLifeguard/greenlight/internal/data"
 	"github.com/BunnyTheLifeguard/greenlight/internal/validator"
 	"github.com/felixge/httpsnoop"
+	"github.com/tomasen/realip"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/time/rate"
 )
@@ -70,11 +70,7 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		if app.config.limiter.enabled {
 			// Extract IP address from request
-			ip, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				app.serverErrorResponse(rw, r, err)
-				return
-			}
+			ip := realip.FromRequest(r)
 
 			// Lock mutex preventing concurrent execution
 			mu.Lock()
