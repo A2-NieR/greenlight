@@ -4,6 +4,7 @@ import (
 	"context"
 	"expvar"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -22,8 +23,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-// Application version number will be generated automatically at build time later
-const version = "1.0.0"
+// Application versioning
+var (
+	buildTime string
+	version   string
+)
 
 // Config struct to hold all configurations settings of the application, will be read from cli-flags
 type config struct {
@@ -106,7 +110,16 @@ func main() {
 		return nil
 	})
 
+	// Version
+	displayVersion := flag.Bool("version", false, "Display version and exit")
+
 	flag.Parse()
+
+	if *displayVersion {
+		fmt.Printf("Version:\t%s\n", version)
+		fmt.Printf("Build time:\t%s\n", buildTime)
+		os.Exit(0)
+	}
 
 	// Initialize a new jsonlog.Logger for messages above INFO severity level
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
