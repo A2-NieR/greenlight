@@ -172,12 +172,12 @@ func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*M
 	if title != "" && len(genres) != 0 {
 		searchSlice := append([]string{title}, genres...)
 		searchString := strings.Join(searchSlice, ", ")
-		filter = bson.D{{"$text", bson.D{{"$search", searchString}}}}
+		filter = bson.D{{Key: "$text", Value: bson.D{{Key: "$search", Value: searchString}}}}
 	} else if title != "" && len(genres) == 0 {
-		filter = bson.D{{"$text", bson.D{{"$search", title}}}}
+		filter = bson.D{{Key: "$text", Value: bson.D{{Key: "$search", Value: title}}}}
 	} else if title == "" && len(genres) != 0 {
 		searchString := strings.Join(genres, ", ")
-		filter = bson.D{{"$text", bson.D{{"$search", searchString}}}}
+		filter = bson.D{{Key: "$text", Value: bson.D{{Key: "$search", Value: searchString}}}}
 	} else {
 		filter = bson.D{}
 	}

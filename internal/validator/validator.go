@@ -3,7 +3,7 @@ package validator
 import "regexp"
 
 // EmailRX regexp for email validation
-var EmailRX = regexp.MustCompile("^\\w+([-+.']\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$")
+var EmailRX = regexp.MustCompile(`^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$`)
 
 // Validator type containing a map of validation errors
 type Validator struct {

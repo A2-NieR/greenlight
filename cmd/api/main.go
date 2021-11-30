@@ -127,7 +127,7 @@ func main() {
 	tokenColl := openCollection(db, cfg, cfg.db.token)
 
 	// Add text indexes for search functionality
-	_, err = dataColl.Indexes().CreateOne(context.Background(), mongo.IndexModel{Keys: bson.D{{"title", "text"}, {"genres", "text"}}})
+	_, err = dataColl.Indexes().CreateOne(context.Background(), mongo.IndexModel{Keys: bson.D{{Key: "title", Value: "text"}, {Key: "genres", Value: "text"}}})
 	if err != nil {
 		logger.PrintFatal(err, nil)
 	}
@@ -214,6 +214,9 @@ func openDB(ctx context.Context, cfg config) (*mongo.Client, error) {
 	clientOpts := options.Client().ApplyURI(cfg.db.uri).SetMaxPoolSize(uint64(cfg.db.maxOpenConns)).SetMaxConnIdleTime(duration)
 
 	client, err := mongo.NewClient(clientOpts)
+	if err != nil {
+		return nil, err
+	}
 
 	err = client.Connect(ctx)
 	if err != nil {
