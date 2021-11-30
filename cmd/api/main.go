@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"expvar"
 	"flag"
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -157,6 +159,38 @@ func main() {
 		logger.PrintFatal(err, nil)
 	}
 
+	// Metrics
+	expvar.NewString("version").Set(version)
+	expvar.Publish("goroutines", expvar.Func(func() interface{} {
+		return runtime.NumGoroutine()
+	}))
+
+	expvar.Publish("database", expvar.Func(func() interface{} {
+		type Metrics struct {
+			Connections bson.M `json:"connections"`
+			Metrics     bson.M `json:"metrics"`
+		}
+		var result *Metrics
+
+		cmd := bson.D{
+			{Key: "serverStatus", Value: 1},
+			{Key: "repl", Value: 0},
+			{Key: "metrics", Value: 1},
+			{Key: "locks", Value: 0},
+		}
+		opts := options.RunCmd().SetReadPreference(readpref.Primary())
+
+		err := db.Database(cfg.db.name).RunCommand(context.TODO(), cmd, opts).Decode(&result)
+		if err != nil {
+			logger.PrintFatal(err, nil)
+		}
+
+		return result
+	}))
+	expvar.Publish("timestamp", expvar.Func(func() interface{} {
+		return time.Now().Unix()
+	}))
+
 	// Declare an instance of the application struct containing config struct & logger
 	app := &application{
 		config: cfg,
@@ -177,7 +211,9 @@ func openDB(ctx context.Context, cfg config) (*mongo.Client, error) {
 		return nil, err
 	}
 
-	client, err := mongo.NewClient(options.Client().SetMaxPoolSize(uint64(cfg.db.maxOpenConns)).SetMaxConnIdleTime(duration).ApplyURI(cfg.db.uri))
+	clientOpts := options.Client().ApplyURI(cfg.db.uri).SetMaxPoolSize(uint64(cfg.db.maxOpenConns)).SetMaxConnIdleTime(duration)
+
+	client, err := mongo.NewClient(clientOpts)
 
 	err = client.Connect(ctx)
 	if err != nil {
